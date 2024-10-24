@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:my_simple_note/Models/note.dart';
+import 'package:my_simple_note/Repository/notes_repository.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CreateNotes extends StatefulWidget {
-  const CreateNotes({super.key});
+  final Note? note;
+  const CreateNotes({super.key, this.note});
 
   @override
   State<CreateNotes> createState() => _CreateNotesState();
@@ -11,15 +15,41 @@ class _CreateNotesState extends State<CreateNotes> {
 
   final _title = TextEditingController();
   final _noteDescription = TextEditingController();
+
+  @override
+  void initState() {
+    if(widget.note != null) {
+      _title.text = widget.note!.title;
+      _noteDescription.text = widget.note!.noteDescription;
+
+    }
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Note..'),
+        title: Text(widget.note == null? 'Add Note' : 'Edit Note'),
         actions: [
-          IconButton(
-              onPressed: (){}, 
-              icon: const Icon(Icons.save)
+          Row(
+            children: [
+              IconButton(
+                  onPressed: widget.note == null? _insertNotes : _updateNotes,
+                  icon: const Icon(Icons.save)
+              ),
+              const SizedBox(width: 5),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                color: Colors.red,
+                onPressed: _deleteNote,
+              ),
+              const SizedBox(width: 5),
+              IconButton(
+                icon: const Icon(Icons.share_rounded),
+                color: Colors.lightBlueAccent,
+                onPressed: _shareNote,
+              ),
+            ],
           )
         ],
       ),
@@ -31,7 +61,9 @@ class _CreateNotesState extends State<CreateNotes> {
               controller: _title,
               decoration: InputDecoration(
                 hintText: 'Title..',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15)
+                )
               ),
             ),
             const SizedBox(height: 16,),
@@ -40,7 +72,8 @@ class _CreateNotesState extends State<CreateNotes> {
                 controller: _noteDescription,
                 decoration: InputDecoration(
                     hintText: 'Note..',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15))
                 ),
                 maxLines: 50,
               ),
@@ -50,4 +83,82 @@ class _CreateNotesState extends State<CreateNotes> {
       ),
     );
   }
+  _insertNotes() async {
+    if (_title.text.isEmpty || _noteDescription.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title and note description cannot be empty.')),
+      );
+      return;
+    }
+
+    final note = Note(
+      title: _title.text,
+      noteDescription: _noteDescription.text,
+      createdAt: DateTime.now(),
+    );
+
+    await NotesRepository.insert(note: note);
+    Navigator.pop(context);
+  }
+
+  _updateNotes() async {
+    if (_title.text.isEmpty || _noteDescription.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title and note description cannot be empty.')),
+      );
+      return;
+    }
+
+    final note = Note(
+      id: widget.note!.id!,
+      title: _title.text,
+      noteDescription: _noteDescription.text,
+      createdAt: widget.note!.createdAt,
+    );
+
+    await NotesRepository.update(note: note);
+    Navigator.pop(context);
+  }
+
+  _deleteNote() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Note'),
+          content: const Text('Are you sure you want to delete this note?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      await NotesRepository.delete(note: widget.note!);
+      Navigator.pop(context);
+    }
+  }
+
+  _shareNote() {
+    final noteText = 'Title: ${_title.text}\n\nNote: ${_noteDescription.text}';
+
+    if (noteText.isNotEmpty) {
+      Share.share(noteText);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot share an empty note.')),
+      );
+    }
+  }
+
+
+
 }
