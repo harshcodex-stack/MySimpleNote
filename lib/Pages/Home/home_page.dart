@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:my_simple_note/Pages/Create_Note/create_notes.dart';
 import 'package:my_simple_note/Pages/Home/Widget/notes.dart';
@@ -7,12 +6,13 @@ import 'package:my_simple_note/Repository/notes_repository.dart';
 import '../../Models/note.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ValueChanged<bool> onThemeChanged; // Callback to change theme
+
+  const HomePage({super.key, required this.onThemeChanged});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
-
 
 class _HomePageState extends State<HomePage> {
   late Future<List<Note>> _notesFuture;
@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> {
       _notesFuture = NotesRepository.getNotes();
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,20 +42,24 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(width: 10),
             const Text(
-                'My Notes',
-              style: TextStyle(
-                  color: Colors.black,
-              ),
-
-
+              'My Notes',
+              style: TextStyle(color: Colors.black),
             ),
           ],
         ),
         centerTitle: true,
         actions: [
           IconButton(
-              onPressed: _refreshNotes,
-              icon: const Icon(Icons.refresh_rounded))
+            onPressed: _refreshNotes,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          // Theme switch
+          Switch(
+            value: Theme.of(context).brightness == Brightness.dark,
+            onChanged: (value) {
+              widget.onThemeChanged(value);
+            },
+          ),
         ],
         backgroundColor: Colors.deepPurple[100],
       ),
@@ -71,8 +76,8 @@ class _HomePageState extends State<HomePage> {
           ),
           Padding(
             padding: const EdgeInsets.all(15),
-            child: FutureBuilder(
-              future: NotesRepository.getNotes(),
+            child: FutureBuilder<List<Note>>(
+              future: _notesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
                   if (snapshot.data == null || snapshot.data!.isEmpty) {
@@ -81,8 +86,7 @@ class _HomePageState extends State<HomePage> {
                     );
                   }
                   return GridView.builder(
-                    gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 15,
                       mainAxisSpacing: 15,
@@ -91,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       var note = snapshot.data![index];
-                      return  MyNotes(note: note);
+                      return MyNotes(note: note);
                     },
                   );
                 }
@@ -101,14 +105,15 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Positioned FloatingActionButton at the bottom right
           Positioned(
             bottom: 20,
             right: 20,
             child: FloatingActionButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const CreateNotes()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateNotes()),
+                );
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,

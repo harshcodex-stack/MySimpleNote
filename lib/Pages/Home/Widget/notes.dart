@@ -17,7 +17,7 @@ class MyNotes extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(23),
           color: Colors.black54,
         ),
         child: Column(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:my_simple_note/Models/note.dart';
 import 'package:my_simple_note/Repository/notes_repository.dart';
 import 'package:share_plus/share_plus.dart';
@@ -12,30 +13,36 @@ class CreateNotes extends StatefulWidget {
 }
 
 class _CreateNotesState extends State<CreateNotes> {
-
   final _title = TextEditingController();
   final _noteDescription = TextEditingController();
 
+
+  bool _isBold = false;
+  bool _isItalic = false;
+  bool _isUnderline = false;
+  double _fontSize = 16.0;
+  Color _fontColor = Colors.black;
+
   @override
   void initState() {
-    if(widget.note != null) {
+    if (widget.note != null) {
       _title.text = widget.note!.title;
       _noteDescription.text = widget.note!.noteDescription;
-
     }
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.note == null? 'Add Note' : 'Edit Note'),
+        title: Text(widget.note == null ? 'Add Note' : 'Edit Note'),
         actions: [
           Row(
             children: [
               IconButton(
-                  onPressed: widget.note == null? _insertNotes : _updateNotes,
-                  icon: const Icon(Icons.save)
+                onPressed: widget.note == null ? _insertNotes : _updateNotes,
+                icon: const Icon(Icons.save),
               ),
               const SizedBox(width: 5),
               IconButton(
@@ -62,27 +69,137 @@ class _CreateNotesState extends State<CreateNotes> {
               decoration: InputDecoration(
                 hintText: 'Title..',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15)
-                )
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
             ),
-            const SizedBox(height: 16,),
+            const SizedBox(height: 16),
             Expanded(
               child: TextField(
                 controller: _noteDescription,
                 decoration: InputDecoration(
-                    hintText: 'Note..',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15))
+                  hintText: 'Note..',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
                 maxLines: 50,
+                style: TextStyle(
+                  fontWeight: _isBold ? FontWeight.bold : FontWeight.normal,
+                  fontStyle: _isItalic ? FontStyle.italic : FontStyle.normal,
+                  decoration: _isUnderline
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                  fontSize: _fontSize,
+                  color: _fontColor,
+                ),
               ),
-            )
+            ),
+            const SizedBox(height: 10),
+            _buildTextFormatBar(),
           ],
         ),
       ),
     );
   }
+
+
+  Widget _buildTextFormatBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton(
+          icon: Icon(
+            Icons.format_bold,
+            color: _isBold ? Colors.blue : Colors.black,
+          ),
+          onPressed: () {
+            setState(() {
+              _isBold = !_isBold;
+            });
+          },
+        ),
+
+        IconButton(
+          icon: Icon(
+            Icons.format_italic,
+            color: _isItalic ? Colors.blue : Colors.black,
+          ),
+          onPressed: () {
+            setState(() {
+              _isItalic = !_isItalic;
+            });
+          },
+        ),
+
+        IconButton(
+          icon: Icon(
+            Icons.format_underline,
+            color: _isUnderline ? Colors.blue : Colors.black,
+          ),
+          onPressed: () {
+            setState(() {
+              _isUnderline = !_isUnderline;
+            });
+          },
+        ),
+
+        IconButton(
+          icon: const Icon(Icons.color_lens),
+          color: _fontColor,
+          onPressed: _selectFontColor,
+        ),
+        DropdownButton<double>(
+          value: _fontSize,
+          items: <double>[14, 16, 18, 20, 22, 24]
+              .map((double value) => DropdownMenuItem<double>(
+            value: value,
+            child: Text('${value.toInt()}'),
+          ))
+              .toList(),
+          onChanged: (newSize) {
+            setState(() {
+              _fontSize = newSize!;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+
+  Future<void> _selectFontColor() async {
+    Color selectedColor = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Font Color'),
+          content: SingleChildScrollView(
+            child: BlockPicker(
+              pickerColor: _fontColor,
+              onColorChanged: (color) {
+                setState(() {
+                  _fontColor = color;
+                });
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop(_fontColor);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    setState(() {
+      _fontColor = selectedColor;
+    });
+  }
+
   _insertNotes() async {
     if (_title.text.isEmpty || _noteDescription.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +275,4 @@ class _CreateNotesState extends State<CreateNotes> {
       );
     }
   }
-
-
-
 }

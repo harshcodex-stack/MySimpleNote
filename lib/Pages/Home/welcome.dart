@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:my_simple_note/Pages/Home/home_page.dart';
 
 class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({super.key});
+  final ValueChanged<bool> onThemeChanged; // Callback to change theme
+
+
+  const WelcomeScreen({super.key, required this.onThemeChanged});
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -20,38 +23,39 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   void initState() {
     super.initState();
 
-    // Setting up system UI in immersive mode
+
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
-    // Animation controller
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
     );
 
-    // Fade animation for the image
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    // Scale animation for the image
+
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    // Fade animation for the text
+
     _textFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
-    // Start the animations
+
     _controller.forward();
 
-    // Delay navigation to home page
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 5), () {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (_) => const HomePage(),
+          builder: (_) => HomePage(
+            onThemeChanged: widget.onThemeChanged, // Pass the theme callback
+          ),
         ));
       });
     });
