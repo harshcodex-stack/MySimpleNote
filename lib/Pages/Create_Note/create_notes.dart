@@ -45,17 +45,20 @@ class _CreateNotesState extends State<CreateNotes> {
                 icon: const Icon(Icons.save),
               ),
               const SizedBox(width: 5),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                color: Colors.red,
-                onPressed: _deleteNote,
-              ),
-              const SizedBox(width: 5),
-              IconButton(
-                icon: const Icon(Icons.share_rounded),
-                color: Colors.lightBlueAccent,
-                onPressed: _shareNote,
-              ),
+              if (widget.note != null)
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  color: Colors.red,
+                  onPressed: _deleteNote,
+                ),
+              if (widget.note != null)
+                const SizedBox(width: 5),
+              if (widget.note != null)
+                IconButton(
+                  icon: const Icon(Icons.share_rounded),
+                  color: Colors.lightBlueAccent,
+                  onPressed: _shareNote,
+                ),
             ],
           )
         ],
@@ -91,7 +94,7 @@ class _CreateNotesState extends State<CreateNotes> {
                       ? TextDecoration.underline
                       : TextDecoration.none,
                   fontSize: _fontSize,
-                  color: _fontColor,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : _fontColor,
                 ),
               ),
             ),
@@ -105,13 +108,16 @@ class _CreateNotesState extends State<CreateNotes> {
 
 
   Widget _buildTextFormatBar() {
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    Color iconColor = isDarkMode ? Colors.white : Colors.black;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         IconButton(
           icon: Icon(
             Icons.format_bold,
-            color: _isBold ? Colors.blue : Colors.black,
+            color: _isBold ? Colors.blue : iconColor,
           ),
           onPressed: () {
             setState(() {
@@ -119,11 +125,10 @@ class _CreateNotesState extends State<CreateNotes> {
             });
           },
         ),
-
         IconButton(
           icon: Icon(
             Icons.format_italic,
-            color: _isItalic ? Colors.blue : Colors.black,
+            color: _isItalic ? Colors.blue : iconColor,
           ),
           onPressed: () {
             setState(() {
@@ -131,11 +136,10 @@ class _CreateNotesState extends State<CreateNotes> {
             });
           },
         ),
-
         IconButton(
           icon: Icon(
             Icons.format_underline,
-            color: _isUnderline ? Colors.blue : Colors.black,
+            color: _isUnderline ? Colors.blue : iconColor,
           ),
           onPressed: () {
             setState(() {
@@ -143,7 +147,6 @@ class _CreateNotesState extends State<CreateNotes> {
             });
           },
         ),
-
         IconButton(
           icon: const Icon(Icons.color_lens),
           color: _fontColor,
@@ -151,12 +154,16 @@ class _CreateNotesState extends State<CreateNotes> {
         ),
         DropdownButton<double>(
           value: _fontSize,
-          items: <double>[14, 16, 18, 20, 22, 24]
-              .map((double value) => DropdownMenuItem<double>(
-            value: value,
-            child: Text('${value.toInt()}'),
-          ))
-              .toList(),
+          dropdownColor: isDarkMode ? Colors.grey[800] : Colors.white,
+          items: <double>[14, 16, 18, 20, 22, 24].map((double value) {
+            return DropdownMenuItem<double>(
+              value: value,
+              child: Text(
+                '${value.toInt()}',
+                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+              ),
+            );
+          }).toList(),
           onChanged: (newSize) {
             setState(() {
               _fontSize = newSize!;
@@ -166,6 +173,7 @@ class _CreateNotesState extends State<CreateNotes> {
       ],
     );
   }
+
 
 
   Future<void> _selectFontColor() async {
@@ -212,10 +220,15 @@ class _CreateNotesState extends State<CreateNotes> {
       title: _title.text,
       noteDescription: _noteDescription.text,
       createdAt: DateTime.now(),
+      fontSize: _fontSize,
+      fontColor: _fontColor,
+      isBold: _isBold,
+      isItalic: _isItalic,
+      isUnderline: _isUnderline,
     );
 
     await NotesRepository.insert(note: note);
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   _updateNotes() async {
@@ -231,10 +244,15 @@ class _CreateNotesState extends State<CreateNotes> {
       title: _title.text,
       noteDescription: _noteDescription.text,
       createdAt: widget.note!.createdAt,
+      fontSize: _fontSize,
+      fontColor: _fontColor,
+      isBold: _isBold,
+      isItalic: _isItalic,
+      isUnderline: _isUnderline,
     );
 
     await NotesRepository.update(note: note);
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   _deleteNote() async {
@@ -260,9 +278,10 @@ class _CreateNotesState extends State<CreateNotes> {
 
     if (shouldDelete == true) {
       await NotesRepository.delete(note: widget.note!);
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     }
   }
+
 
   _shareNote() {
     final noteText = 'Title: ${_title.text}\n\nNote: ${_noteDescription.text}';
